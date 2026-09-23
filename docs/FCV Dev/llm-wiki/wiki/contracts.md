@@ -37,7 +37,8 @@ Todos los recursos S3 usan `/api/v1`, JWT access en `Authorization: Bearer` y JS
 
 | Recurso | Operación | Rol |
 |---|---|---|
-| Catálogos | `GET /catalogs/{locations|appointment-statuses|roles|regimes|plans}` | autenticado |
+| Catálogos | `GET /catalogs/{locations|appointment-statuses|roles|regimes}` | autenticado |
+| Planes activos para registro | `GET /catalogs/plans` | público |
 | Especialidades disponibles | `GET /specialties` | autenticado |
 | Especialidades ADMIN | `GET|POST|PATCH /admin/specialties[/{id}]` | ADMIN |
 | Profesionales | `POST /admin/professionals`; `PUT /admin/professionals/{id}/specialties|locations`; `PATCH /admin/professionals/{id}/active` | ADMIN |

@@ -76,6 +76,29 @@ class AuthIntegrationTest {
         Long userId = mapper.readTree(body).get("id").asLong();
         assertThat(jdbc.queryForObject("select count(*) from user_insurance_affiliations where user_id=? and plan_id=? and is_current=true", Integer.class, userId, planId)).isEqualTo(1);
     }
+
+    @Test void plansArePublicForRegistrationAndInvalidPlansAreControlled() throws Exception {
+        mvc.perform(get("/api/v1/catalogs/plans"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("[0].id").exists())
+                .andExpect(jsonPath("[0].name").exists());
+
+        String invalidPlan = mvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
+                {"firstName":"Ana","lastName":"Invalida","documentType":"CC","documentNumber":"%s","email":"%s","phone":"3000000000","password":"SyntheticPass123!","insurancePlanId":999999999}
+                """.formatted(uniqueDoc(), uniqueEmail()))).andExpect(status().isBadRequest())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(invalidPlan).contains("Datos inválidos");
+
+        Long activePlan = jdbc.queryForObject("select id from eps_plans where active=true limit 1", Long.class);
+        jdbc.update("update eps_plans set active=false where id=?", activePlan);
+        try {
+            mvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
+                    {"firstName":"Ana","lastName":"Inactiva","documentType":"CC","documentNumber":"%s","email":"%s","phone":"3000000000","password":"SyntheticPass123!","insurancePlanId":%d}
+                    """.formatted(uniqueDoc(), uniqueEmail(), activePlan))).andExpect(status().isBadRequest());
+        } finally {
+            jdbc.update("update eps_plans set active=true where id=?", activePlan);
+        }
+    }
     private org.springframework.test.web.servlet.ResultActions login(String email, String password) throws Exception {
         return mvc.perform(post("/api/v1/auth/login").header("X-Requested-With", "XMLHttpRequest")
                 .contentType(MediaType.APPLICATION_JSON).content("""
@@ -94,6 +117,8 @@ class AuthIntegrationTest {
         String hash = jdbc.queryForObject("select password_hash from users where email = ?", String.class, email);
         assertThat(hash).startsWith("$2").isNotEqualTo("SyntheticPass123!");
         assertThat(jdbc.queryForObject("select count(*) from user_roles ur join roles r on ur.role_id=r.id where r.code='USER'", Integer.class)).isGreaterThan(0);
+        Long userId = mapper.readTree(body).get("id").asLong();
+        assertThat(jdbc.queryForObject("select count(*) from user_insurance_affiliations where user_id=?", Integer.class, userId)).isZero();
 
         mvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
                 .content(registration(email, uniqueDoc()))).andExpect(status().isConflict());
