@@ -2,7 +2,7 @@
 id: HU-029
 tipo: historia-de-usuario
 titulo: "Consultar agenda profesional"
-estado: Pendiente de aprobación
+estado: Aprobada para corte S4
 epica: "[[EP-007-operacion-profesional-y-administrativa]]"
 esfuerzo: Medio
 sprint_sugerido: "Incremento 6"
@@ -50,5 +50,6 @@ Es distinta del calendario de bloques de disponibilidad.
 | CA-03 / DoD | Pendiente | — | — |
 ## Historial de validación
 - 2026-09-17 — HU creada en estado `Pendiente de aprobación`.
+- 2026-09-25 — Usuario aprobó incluir HU-029 en el corte S4; DoD permanece pendiente de evidencia.
 ## Notas y decisiones
 - Los campos visibles no amplían el PRD ni contienen historia clínica.

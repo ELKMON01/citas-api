@@ -2,7 +2,7 @@
 id: HU-032
 tipo: historia-de-usuario
 titulo: "Consultar auditoría de estados"
-estado: Pendiente de aprobación
+estado: Aprobada para corte S4
 epica: "[[EP-007-operacion-profesional-y-administrativa]]"
 esfuerzo: Alto
 sprint_sugerido: "Incremento 6"
@@ -51,5 +51,6 @@ Cada cambio guarda cita, estado nuevo, actor cuando existe, fuente SYSTEM/USER/A
 | CA-03 / DoD | Pendiente | — | — |
 ## Historial de validación
 - 2026-09-17 — HU creada en estado `Pendiente de aprobación`.
+- 2026-09-25 — Usuario aprobó incluir HU-032 en el corte S4 con USER propio, PROFESSIONAL asignado y ADMIN todas; DoD permanece pendiente de evidencia.
 ## Notas y decisiones
-- El rol exacto de lectura administrativa se concreta con el contrato aprobado.
+- DECISIÓN 2026-09-25: USER lee historial de sus propias citas; PROFESSIONAL lee historial de citas asignadas a su identidad; ADMIN lee el historial de cualquier cita.

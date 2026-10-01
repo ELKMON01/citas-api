@@ -2,7 +2,7 @@
 id: HU-027
 tipo: historia-de-usuario
 titulo: "Solicitar reprogramación"
-estado: Pendiente de aprobación
+estado: Aprobada para corte S4
 epica: "[[EP-006-ciclo-de-vida-de-citas-y-reprogramaciones]]"
 esfuerzo: Alto
 sprint_sugerido: "Incremento 5"
@@ -51,5 +51,6 @@ Conserva profesional/especialidad; cambiar profesional es una nueva cita. La sol
 | CA-03 / DoD | Pendiente | — | — |
 ## Historial de validación
 - 2026-09-17 — HU creada en estado `Pendiente de aprobación`.
+- 2026-09-25 — Usuario aprobó incluir HU-027 en el corte S4; DoD permanece pendiente de evidencia.
 ## Notas y decisiones
 - Se conserva el significado exacto de `PENDING` del catálogo fijo.

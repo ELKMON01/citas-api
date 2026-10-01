@@ -2,7 +2,7 @@
 id: HU-028
 tipo: historia-de-usuario
 titulo: "Resolver reprogramación"
-estado: Pendiente de aprobación
+estado: Aprobada para corte S4
 epica: "[[EP-006-ciclo-de-vida-de-citas-y-reprogramaciones]]"
 esfuerzo: Alto
 sprint_sugerido: "Incremento 5"
@@ -51,5 +51,6 @@ Al aprobar libera slots antiguos, asigna nuevos y actualiza cita; al rechazar li
 | CA-03 / DoD | Pendiente | — | — |
 ## Historial de validación
 - 2026-09-17 — HU creada en estado `Pendiente de aprobación`.
+- 2026-09-25 — Usuario aprobó incluir HU-028 en el corte S4; DoD permanece pendiente de evidencia.
 ## Notas y decisiones
 - Tras rechazo USER conserva o cancela la cita mediante [[HU-026-cancelar-cita]].

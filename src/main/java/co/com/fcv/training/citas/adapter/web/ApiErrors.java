@@ -31,7 +31,8 @@ class ApiErrors {
 
     @ExceptionHandler(SchedulingFailure.class)
     ResponseEntity<ProblemDetail> scheduling(SchedulingFailure failure) {
-        return problem(failure.kind() == SchedulingFailure.Kind.NOT_FOUND ? HttpStatus.NOT_FOUND : HttpStatus.CONFLICT, failure.getMessage());
+        HttpStatus status = switch (failure.kind()) { case NOT_FOUND -> HttpStatus.NOT_FOUND; case FORBIDDEN -> HttpStatus.FORBIDDEN; case CONFLICT -> HttpStatus.CONFLICT; };
+        return problem(status, failure.getMessage());
     }
 
     private ResponseEntity<ProblemDetail> problem(HttpStatus status, String detail) {

@@ -54,6 +54,7 @@ La estética se deriva del prototipo React/Vite importado desde AI Studio. Esta 
 ## Historial de validación
 - 2026-09-17 — HU creada en estado `Pendiente de aprobación`.
 - 2026-09-22 — Corte React de autenticación implementado y verificado cross-repo; la HU queda en progreso hasta cubrir las pantallas de sus dependencias posteriores.
+- 2026-09-25 — Usuario aprobó completar HU-033 en el corte S4 para los flujos HU-025/026/027/028/029/030/032; DoD global permanece pendiente de evidencia.
 ## Notas y decisiones
 - React + TypeScript + Vite se adopta para este corte a partir del prototipo entregado `portal-de-citas.zip`.
 - 2026-09-17: aquí quedan las tareas visuales diferidas de HU-005/006/007: formulario de registro, feedback de login, renovación desde navegador y limpieza de estado autenticado al salir. Integrar `credentials`, `X-Requested-With` y el contrato de cookie cuando se aborde la UI.

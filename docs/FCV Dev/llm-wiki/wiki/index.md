@@ -1,6 +1,6 @@
 # Índice de la LLM Wiki
 
-Última actualización: 2026-09-22. El corte backend de identidad (HU-005/006/007) tiene implementación y contrato REST inicial. El frontend React/Vite está importado y contiene trabajo local de integración auth pendiente de verificación. Las demás capacidades siguen sin contrato final.
+Última actualización: 2026-09-25. El corte backend de identidad (HU-005/006/007) mantiene su contrato REST. El incremento S4 (HU-025/026/027/028/029/030/032/033) está aprobado e implementado en ambos repositorios sobre `develop`; el contrato lifecycle está en `contracts.md`. Las pruebas frontend están verdes; compilación backend y pruebas focalizadas pasan, mientras backend lifecycle e integración cross-repo siguen pendientes por el acceso de Testcontainers a Docker. La evidencia vigente está en [evidencia S4](../../evidence/S4/README.md).
 
 ## Lectura recomendada
 
@@ -21,3 +21,5 @@
 - [Convenciones](../schema/page-conventions.md)
 - [Gobierno](../schema/governance.md)
 - [Manifest RAW](../raw/manifest.md)
+
+2026-09-25 update: identity and S3 contracts remain in force. Lifecycle S4 (HU-025/026/027/028/029/030/032/033) is approved and implemented; evidence is tracked in [S4 evidence](../../evidence/S4/README.md) and the workspace `S4_BASELINE.md`. Frontend checks, backend compile, and four backend focal tests pass; lifecycle persistence checks and cross-repo runtime verification remain blocked. HU DoD remains pending.

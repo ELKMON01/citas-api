@@ -2,7 +2,7 @@
 id: HU-030
 tipo: historia-de-usuario
 titulo: "Cerrar atención"
-estado: Pendiente de aprobación
+estado: Aprobada para corte S4
 epica: "[[EP-007-operacion-profesional-y-administrativa]]"
 esfuerzo: Alto
 sprint_sugerido: "Incremento 6"
@@ -51,5 +51,6 @@ El PRD no permite que PROFESSIONAL haga otras decisiones de cita.
 | CA-03 / DoD | Pendiente | — | Requiere regla aplicable. |
 ## Historial de validación
 - 2026-09-17 — HU creada en estado `Pendiente de aprobación`.
+- 2026-09-25 — Usuario aprobó incluir HU-030 en el corte S4 y definió aplicabilidad como cita `APPROVED` cuyo horario ya terminó; DoD permanece pendiente de evidencia.
 ## Notas y decisiones
-- Pregunta abierta: definición de condición “aplicable”.
+- DECISIÓN 2026-09-25: la cita es aplicable cuando está `APPROVED` y su horario programado ya terminó, evaluado en `America/Bogota`.

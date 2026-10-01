@@ -56,3 +56,25 @@ Errores de validación usan `400`; recursos o relaciones inexistentes usan `404`
 `citas-web` consume las cuatro operaciones de autenticación directamente con `VITE_API_URL` (valor local: `http://localhost:8080`). Envía `credentials: include` y `X-Requested-With: XMLHttpRequest` en login, refresh y logout. El access JWT permanece solo en memoria; el refresh se mantiene en cookie `HttpOnly` y se rota al restaurar la sesión. La interfaz no registra ni muestra tokens o contraseñas.
 
 El CORS permite exclusivamente `FRONTEND_ORIGIN`, métodos `POST`, `GET`, `OPTIONS`, encabezados `Content-Type`, `Authorization`, `X-Requested-With` y credenciales. La base de referencia ya existente utiliza `BIGINT` para usuarios, `roles.code` y `refresh_tokens`; Flyway hace baseline en versión 0 y `V1` es compatible con ese esquema 3FN.
+
+## DECISION - 2026-09-25 - S4 lifecycle REST contract
+
+The user approved HU-025/026/027/028/029/030/032/033 for this cut and approved the routes proposed in `S4_BASELINE.md`. All endpoints use `/api/v1`, JSON, and access JWT in `Authorization: Bearer`. Appointment dates and times use `YYYY-MM-DD` and `HH:mm` in `America/Bogota`. Errors retain the existing Problem Details mapping: 400 invalid input, 401 invalid session, 403 role/ownership denial, 404 absent resource, 409 slot conflict or invalid transition.
+
+| Operation | Route | Access |
+|---|---|---|
+| List own appointments; optional `status`, `from`, `to` filters | `GET /user/appointments` | USER |
+| Read own appointment | `GET /user/appointments/{id}` | USER |
+| Cancel eligible own appointment; optional `{reason}` body | `POST /user/appointments/{id}/cancellation` | USER |
+| Request rescheduling; `{date, startTime}` body | `POST /user/appointments/{id}/rescheduling-requests` | USER |
+| List pending reschedules; optional `locationId`, `professionalId`, `specialtyId`, `date` filters | `GET /admin/rescheduling-requests` | ADMIN |
+| Decide with `{decision: APPROVE|REJECT, reason?}`; rejection requires reason | `POST /admin/rescheduling-requests/{id}/decision` | ADMIN |
+| List own approved appointments; `from`, `to`, optional `locationId` | `GET /professional/appointments` | PROFESSIONAL |
+| Close appointment as `COMPLETED` or `NO_SHOW` | `PATCH /professional/appointments/{id}/status` | PROFESSIONAL |
+| Read status history | `GET /appointments/{id}/status-history` | USER owner, PROFESSIONAL assigned, ADMIN global |
+
+Appointment responses contain `id`, location `{id,name}`, professional `{id,displayName}`, specialty `{id,name}`, `date`, `startTime`, `endTime`, `durationMinutes`, `status`, and `rejectionReason` when present. Professional agenda responses contain no patient personal data. Rescheduling responses contain request id, related appointment, requested slot, status, reason, and relevant timestamps. History responses contain new status, nullable actor id, source `SYSTEM|USER|ADMIN`, timestamp, and optional reason.
+
+HU-030 eligibility: the appointment must be assigned to the authenticated professional, have status `APPROVED`, and its scheduled end must have passed in `America/Bogota`; the professional may select `COMPLETED` or `NO_SHOW`. HU-032 access: USER reads own appointment history; PROFESSIONAL reads history for appointments assigned to them; ADMIN reads any appointment history.
+
+Compatibility: authentication and S3 routes remain unchanged; lifecycle adds routes under `/api/v1`. A migration after V2 preserves current appointments and history. A `PENDING` reschedule retains its new slots without freeing the original slots. `citas-web` consumes these routes directly. Migration, backend tests, client types/API/screens, and evidence in both repositories are required before closure.

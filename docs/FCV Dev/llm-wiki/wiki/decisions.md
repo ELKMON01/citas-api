@@ -19,3 +19,7 @@ Los ocho subagentes especializados se mantienen como archivos Markdown versionad
 ## HECHO — 2026-09-22 · Frontend
 
 React es el framework detectado en `citas-web`; deja de ser una pregunta abierta. La aprobación visual y la verificación del incremento auth continúan pendientes de evidencia.
+
+## DECISION - 2026-09-25 - S4 scope and lifecycle rules
+
+The user approved HU-025/026/027/028/029/030/032/033 for S4, with HU-033 limited to these flows. HU-030 applies when an appointment is `APPROVED` and its scheduled end has passed in `America/Bogota`. For HU-032, USER reads own appointment histories, PROFESSIONAL reads histories assigned to their identity, and ADMIN reads any history. The approved S4 REST contract is in `contracts.md`.

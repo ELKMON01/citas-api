@@ -2,7 +2,7 @@
 id: HU-026
 tipo: historia-de-usuario
 titulo: "Cancelar cita"
-estado: Pendiente de aprobación
+estado: Aprobada para corte S4
 epica: "[[EP-006-ciclo-de-vida-de-citas-y-reprogramaciones]]"
 esfuerzo: Alto
 sprint_sugerido: "Incremento 5"
@@ -51,5 +51,6 @@ Una cancelada no se reactiva directamente y debe registrarse historial.
 | CA-03 / DoD | Pendiente | — | — |
 ## Historial de validación
 - 2026-09-17 — HU creada en estado `Pendiente de aprobación`.
+- 2026-09-25 — Usuario aprobó incluir HU-026 en el corte S4; DoD permanece pendiente de evidencia.
 ## Notas y decisiones
 - El catálogo determina cuáles estados son terminales.

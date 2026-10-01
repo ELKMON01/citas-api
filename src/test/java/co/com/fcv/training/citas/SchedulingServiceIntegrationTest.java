@@ -30,7 +30,7 @@ class SchedulingServiceIntegrationTest {
         r.add("spring.datasource.url", MYSQL::getJdbcUrl); r.add("spring.datasource.username", MYSQL::getUsername); r.add("spring.datasource.password", MYSQL::getPassword);
         r.add("app.jwt.access-secret", () -> "a".repeat(40)); r.add("app.jwt.refresh-secret", () -> "b".repeat(40)); r.add("app.cookie.secure", () -> true); r.add("app.cookie.same-site", () -> "None");
     }
-    @Autowired SchedulingService scheduling; @Autowired JdbcTemplate jdbc;
+    @Autowired SchedulingService scheduling; @Autowired co.com.fcv.training.citas.application.AppointmentLifecycleService lifecycle; @Autowired JdbcTemplate jdbc;
     @Test void retainsConsecutiveSlotsAndReleasesThemAfterAdministrativeRejection() {
         String suffix=UUID.randomUUID().toString();
         Long professionalUser=user("prof-"+suffix+"@example.test",suffix); Long professional=scheduling.createProfessional("Pro","Fes","CC","P"+suffix,"pro2-"+suffix+"@example.test","300", "hash", "PC"+suffix,"LIC"+suffix);
@@ -93,6 +93,48 @@ class SchedulingServiceIntegrationTest {
         } finally {
             pool.shutdownNow();
         }
+    }
+    @Test void rescheduleApprovalAtomicallySwapsSlotsAndKeepsHistoryAuthorized(){
+        Fixture f=fixture("swap"); Long appointment=f.approved();
+        var request=lifecycle.request(f.patient,appointment,f.date,LocalTime.of(10,0)); Long requestId=((Number)request.get("id")).longValue();
+        assertThat(jdbc.queryForObject("select count(*) from professional_slots where appointment_id=?",Integer.class,appointment)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("select count(*) from rescheduling_slots where rescheduling_request_id=?",Integer.class,requestId)).isEqualTo(2);
+        assertThat(scheduling.availability(f.location,f.specialty,f.professional,f.date).stream().noneMatch(slot->slot.startAt().equals(LocalDateTime.of(f.date,LocalTime.of(10,0))))).isTrue();
+        assertThat(scheduling.availability(f.location,f.specialty,f.professional,f.date).stream().anyMatch(slot->slot.startAt().equals(LocalDateTime.of(f.date,LocalTime.of(9,0))))).isTrue();
+        assertThatThrownBy(()->scheduling.reserve(f.otherPatient,f.professional,f.location,f.specialty,LocalDateTime.of(f.date,LocalTime.of(10,0)),"Synthetic competing booking")).isInstanceOf(SchedulingFailure.class).satisfies(e->assertThat(((SchedulingFailure)e).kind()).isEqualTo(SchedulingFailure.Kind.CONFLICT));
+        assertThat(jdbc.queryForObject("select count(*) from professional_slots where appointment_id=?",Integer.class,appointment)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("select count(*) from rescheduling_slots where rescheduling_request_id=?",Integer.class,requestId)).isEqualTo(2);
+        assertThatThrownBy(()->lifecycle.detail(f.otherPatient,appointment)).isInstanceOf(SchedulingFailure.class);
+        assertThat(lifecycle.agenda(f.professionalUser,f.date,f.date,f.location).getFirst()).doesNotContainKey("patient");
+        lifecycle.decide(f.admin,requestId,"APPROVE",null);
+        assertThat(jdbc.queryForObject("select count(*) from professional_slots where appointment_id=? and start_at=?",Integer.class,appointment,LocalDateTime.of(f.date,LocalTime.of(8,0)))).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from professional_slots where appointment_id=? and start_at=?",Integer.class,appointment,LocalDateTime.of(f.date,LocalTime.of(10,0)))).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select decision_source from rescheduling_requests where id=?",String.class,requestId)).isEqualTo("ADMIN");
+        assertThat(lifecycle.history(f.patient,appointment,java.util.Set.of("USER"))).isNotEmpty();
+        assertThat(lifecycle.history(f.patient,appointment,java.util.Set.of("USER","PROFESSIONAL"))).isNotEmpty();
+        assertThatThrownBy(()->lifecycle.history(f.otherPatient,appointment,java.util.Set.of("USER"))).isInstanceOf(SchedulingFailure.class);
+    }
+    @Test void rescheduleRejectionReleasesOnlyNewHoldAndCancellationClosesPendingRequest(){
+        Fixture f=fixture("reject"); Long appointment=f.approved();var request=lifecycle.request(f.patient,appointment,f.date,LocalTime.of(10,0));Long rid=((Number)request.get("id")).longValue();lifecycle.decide(f.admin,rid,"REJECT","No se puede trasladar");
+        assertThat(jdbc.queryForObject("select count(*) from professional_slots where appointment_id=? and start_at=?",Integer.class,appointment,LocalDateTime.of(f.date,LocalTime.of(8,0)))).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from professional_slots where appointment_id=? and start_at=?",Integer.class,appointment,LocalDateTime.of(f.date,LocalTime.of(10,0)))).isZero();
+        assertThat(jdbc.queryForObject("select decision_source from rescheduling_requests where id=?",String.class,rid)).isEqualTo("ADMIN");
+        var pending=lifecycle.request(f.patient,appointment,f.date,LocalTime.of(10,0));Long pendingId=((Number)pending.get("id")).longValue();
+        lifecycle.cancel(f.patient,appointment,"Ya no asistiré");
+        assertThat(jdbc.queryForObject("select code from rescheduling_statuses s join rescheduling_requests r on r.status_id=s.id where r.id=?",String.class,pendingId)).isEqualTo("REJECTED");
+        assertThat(jdbc.queryForObject("select decision_source from rescheduling_requests where id=?",String.class,pendingId)).isEqualTo("USER");
+        assertThat(jdbc.queryForObject("select count(*) from professional_slots where appointment_id=?",Integer.class,appointment)).isZero();
+        assertThatThrownBy(()->lifecycle.decide(f.admin,pendingId,"APPROVE",null)).isInstanceOf(SchedulingFailure.class).satisfies(e->assertThat(((SchedulingFailure)e).kind()).isEqualTo(SchedulingFailure.Kind.CONFLICT));
+        assertThatThrownBy(()->lifecycle.decide(f.admin,pendingId+999999,"APPROVE",null)).isInstanceOf(SchedulingFailure.class).satisfies(e->assertThat(((SchedulingFailure)e).kind()).isEqualTo(SchedulingFailure.Kind.NOT_FOUND));
+    }
+    @Test void professionalClosesOnlyAssignedApprovedAppointmentAfterScheduledEnd(){Fixture f=fixture("close");Long appointment=f.approved();LocalDateTime future=LocalDateTime.now(ZoneId.of("America/Bogota")).plusMinutes(2);jdbc.update("update appointments set scheduled_start_at=?,scheduled_end_at=? where id=?",future.minusMinutes(60),future,appointment);assertThatThrownBy(()->lifecycle.close(f.professionalUser,appointment,"COMPLETED")).isInstanceOf(SchedulingFailure.class);assertThatThrownBy(()->lifecycle.close(f.otherPatient,appointment,"COMPLETED")).isInstanceOf(Exception.class);LocalDateTime past=LocalDateTime.now(ZoneId.of("America/Bogota")).minusMinutes(2);jdbc.update("update appointments set scheduled_start_at=?,scheduled_end_at=? where id=?",past.minusMinutes(60),past,appointment);lifecycle.close(f.professionalUser,appointment,"NO_SHOW");assertThat(jdbc.queryForObject("select s.code from appointments a join appointment_statuses s on s.id=a.status_id where a.id=?",String.class,appointment)).isEqualTo("NO_SHOW");assertThat(lifecycle.history(f.patient,appointment,java.util.Set.of("USER"))).anyMatch(h->"NO_SHOW".equals(h.get("newStatus"))&&"PROFESSIONAL".equals(h.get("source")));}
+    @Test void concurrentRescheduleRequestsRetainOnlyOneNewSlotHold() throws Exception {Fixture f=fixture("concurrent");Long appointment=f.approved();CountDownLatch gate=new CountDownLatch(1);ExecutorService pool=Executors.newFixedThreadPool(2);try{Callable<String>attempt=()->{gate.await();try{lifecycle.request(f.patient,appointment,f.date,LocalTime.of(10,0));return "created";}catch(SchedulingFailure e){if(e.kind()!=SchedulingFailure.Kind.CONFLICT)throw e;return "conflict";}};Future<String>a=pool.submit(attempt),b=pool.submit(attempt);gate.countDown();assertThat(List.of(a.get(),b.get())).containsExactlyInAnyOrder("created","conflict");assertThat(jdbc.queryForObject("select count(*) from rescheduling_requests r join rescheduling_statuses s on s.id=r.status_id where r.appointment_id=? and s.code='PENDING'",Integer.class,appointment)).isEqualTo(1);assertThat(jdbc.queryForObject("select count(*) from rescheduling_slots rs join rescheduling_requests r on r.id=rs.rescheduling_request_id join rescheduling_statuses s on s.id=r.status_id where r.appointment_id=? and s.code='PENDING'",Integer.class,appointment)).isEqualTo(2);}finally{pool.shutdownNow();}}
+    private Fixture fixture(String label){String suffix=label+UUID.randomUUID();Long pro=scheduling.createProfessional("Pro","Lifecycle","CC","PL"+suffix,"pl"+suffix+"@example.test","300","hash","PC"+suffix,"LIC"+suffix);Long proUser=jdbc.queryForObject("select user_id from professionals where id=?",Long.class,pro);Long spec=scheduling.createSpecialty("S"+suffix,"Especialidad "+suffix,60,false).id();Long loc=jdbc.queryForObject("select id from locations where active=true limit 1",Long.class);scheduling.setProfessionalSpecialties(pro,List.of(spec),spec);scheduling.setProfessionalLocations(pro,List.of(loc));LocalDate day=LocalDate.now().plusDays(8);scheduling.createBlock(proUser,loc,day,LocalTime.of(8,0),LocalTime.of(12,0));Long patient=user("patient-"+suffix+"@example.test","U"+suffix),other=user("other-"+suffix+"@example.test","O"+suffix),admin=user("admin-"+suffix+"@example.test","A"+suffix);return new Fixture(pro,proUser,spec,loc,day,patient,other,admin);}
+    private class Fixture {
+        final Long professional,professionalUser,specialty,location,patient,otherPatient,admin;
+        final LocalDate date;
+        Fixture(Long professional,Long professionalUser,Long specialty,Long location,LocalDate date,Long patient,Long otherPatient,Long admin){this.professional=professional;this.professionalUser=professionalUser;this.specialty=specialty;this.location=location;this.date=date;this.patient=patient;this.otherPatient=otherPatient;this.admin=admin;}
+        Long approved(){SchedulingService.Appointment a=scheduling.reserve(patient,professional,location,specialty,LocalDateTime.of(date,LocalTime.of(8,0)),"Synthetic reason");return scheduling.decide(admin,a.id(),"APPROVE",null).id();}
     }
     private Long user(String email,String document) { jdbc.update("insert into users(first_name,last_name,document_type,document_number,email,phone,password_hash,active,email_verified) values ('Test','User','CC',?,?,?,'hash',true,false)",document,email,"300"); return jdbc.queryForObject("select id from users where email=?",Long.class,email); }
 }
