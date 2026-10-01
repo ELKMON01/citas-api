@@ -78,3 +78,18 @@ Appointment responses contain `id`, location `{id,name}`, professional `{id,disp
 HU-030 eligibility: the appointment must be assigned to the authenticated professional, have status `APPROVED`, and its scheduled end must have passed in `America/Bogota`; the professional may select `COMPLETED` or `NO_SHOW`. HU-032 access: USER reads own appointment history; PROFESSIONAL reads history for appointments assigned to them; ADMIN reads any appointment history.
 
 Compatibility: authentication and S3 routes remain unchanged; lifecycle adds routes under `/api/v1`. A migration after V2 preserves current appointments and history. A `PENDING` reschedule retains its new slots without freeing the original slots. `citas-web` consumes these routes directly. Migration, backend tests, client types/API/screens, and evidence in both repositories are required before closure.
+
+## DECISION - 2026-09-30 - Identity and profile completion
+
+The identity increment completes the PRD additively. Existing authentication routes remain unchanged.
+
+| Operation | Route | Input / output | Access |
+|---|---|---|---|
+| Request recovery | `POST /auth/forgot-password` | `{email}`; returns `202` with a generic message. `devToken` appears only when `PASSWORD_RESET_EXPOSE_TOKEN=true` in the local profile. | Public |
+| Reset password | `POST /auth/reset-password` | `{token,newPassword}`; returns `204`. Token expires in 30 minutes and is single-use. | Public |
+| Read profile | `GET /user/profile` | Public identity/contact fields, document and current affiliation; never password or tokens. | USER, own |
+| Update profile | `PATCH /user/profile` | Only `firstName`, `lastName` and `phone` are allowed. Email, document and role are immutable in this contract. | USER, own |
+| Save affiliation | `PUT /user/affiliation` | `{planId,membershipNumber?}`; active plan and normalized affiliation. | USER, own |
+| Remove affiliation | `DELETE /user/affiliation` | Marks current affiliation historical; no physical deletion. | USER, own |
+
+Recovery tokens are stored only as hashes. A successful reset revokes the user's persisted refresh tokens; access tokens expire normally. Recovery responses do not reveal whether an email exists. `devToken` is an explicit local-only mechanism and is not enabled by default in production.

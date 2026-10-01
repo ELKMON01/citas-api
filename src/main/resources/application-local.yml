@@ -2,3 +2,5 @@ app:
   cookie:
     secure: ${REFRESH_COOKIE_SECURE:false}
     same-site: ${REFRESH_COOKIE_SAME_SITE:Lax}
+  password-reset:
+    expose-token: ${PASSWORD_RESET_EXPOSE_TOKEN:false}

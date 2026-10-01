@@ -23,3 +23,4 @@
 - [Manifest RAW](../raw/manifest.md)
 
 2026-09-25 update: identity and S3 contracts remain in force. Lifecycle S4 (HU-025/026/027/028/029/030/032/033) is approved and implemented; evidence is tracked in [S4 evidence](../../evidence/S4/README.md) and the workspace `S4_BASELINE.md`. Frontend checks, backend compile, and four backend focal tests pass; lifecycle persistence checks and cross-repo runtime verification remain blocked. HU DoD remains pending.
+2026-09-30 update: additive identity completion is implemented in both repositories for password recovery/reset and USER profile/affiliation. Verification is complete: API suite, frontend tests/lint/build and local Docker runtime pass; the local web is on 5174 and API on 8081.

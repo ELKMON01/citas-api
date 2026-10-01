@@ -33,3 +33,6 @@ Fecha: 2026-09-25. Ramas de trabajo: `develop` en `citas-api` y `citas-web`. El 
 ## Cierre de HU y riesgos
 
 Las HU S4 permanecen aprobadas/en progreso, con sus DoD sin marcar completos. Para cerrar hace falta restaurar acceso a Docker/Maven, ejecutar `mvn test` incluyendo Testcontainers, ejecutar el hook completo requerido, levantar ambos servicios y probar USER/PROFESSIONAL/ADMIN sobre MySQL real. No se creó commit porque el hook backend no pudo pasar.
+## Actualización de verificación — 2026-09-30
+
+La restricción de ejecución fue resuelta usando Maven/Testcontainers con acceso al Docker Engine local. La suite completa del API pasó; incluye migraciones Flyway V1-V4, escenarios de identidad, ciclo de vida y concurrencia. En `citas-web` pasaron 28 pruebas, `npm run lint` y `npm run build`. El runtime local de Docker Compose quedó operativo con MySQL, API en `http://localhost:8081` y web en `http://localhost:5174`.

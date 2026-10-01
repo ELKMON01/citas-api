@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
 set -eu
 
-for file in $(git diff --cached --name-only --diff-filter=ACM); do
+git diff --cached --name-only --diff-filter=ACM -z |
+while IFS= read -r -d '' file; do
   [ "$file" = ".env.example" ] && continue
   if git show ":$file" | grep -Eiq "(JWT_(ACCESS|REFRESH)_SECRET|DB_PASSWORD|MYSQL_ROOT_PASSWORD|OAUTH_CLIENT_SECRET)[[:space:]]*[:=][[:space:]]*[\"'][^$][^\"']+"; then
     printf '%s\n' "Se detectó un secreto potencial en $file. Retíralo antes de confirmar."
@@ -9,4 +10,15 @@ for file in $(git diff --cached --name-only --diff-filter=ACM); do
   fi
 done
 
-mvn test
+MAVEN_COMMAND="${MAVEN_CMD:-mvn}"
+if [ -n "${MAVEN_CMD:-}" ]; then
+  if [ ! -f "$MAVEN_COMMAND" ]; then
+    printf '%s\n' "La ruta indicada en MAVEN_CMD no existe: $MAVEN_COMMAND"
+    exit 1
+  fi
+elif ! command -v "$MAVEN_COMMAND" >/dev/null 2>&1; then
+  printf '%s\n' "Maven no está disponible. Instala Maven o define MAVEN_CMD con la ruta a mvn/mvn.cmd antes de confirmar."
+  exit 1
+fi
+
+"$MAVEN_COMMAND" test

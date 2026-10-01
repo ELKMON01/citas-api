@@ -2,6 +2,10 @@
 
 ## HECHO
 
+## HECHO - 2026-09-30 - Identity and profile
+
+The identity increment adds V4 and additive REST endpoints for password recovery/reset, own profile and normalized affiliation. React consumes them directly without a BFF. Recovery tokens are hashed, expire after 30 minutes, are single-use and revoke refresh tokens after a successful reset. Local exposure requires `PASSWORD_RESET_EXPOSE_TOKEN=true`; API integration, frontend tests/build and local Docker runtime verification pass.
+
 Las sesiones S2-S6 requieren commits y evidencias específicas. El backend y frontend deben mantener historial trazable; las pruebas y la evidencia cross-repo son parte de la evaluación.
 
 ## HECHO — 2026-09-17

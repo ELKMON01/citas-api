@@ -20,9 +20,11 @@ Lee el PRD en la carpeta raíz antes de continuar Spring Boot.
 
 ## Incremento de identidad backend
 
-Este incremento implementa HU-005/006/007 por REST; no incluye recuperación de contraseña. El contrato está en `docs/FCV Dev/llm-wiki/wiki/contracts.md`. Java 21/Spring Boot 3.5.0/Maven y la migración Flyway V1 se ejecutan en `develop`.
+Este incremento implementa la identidad completa por REST: HU-005/006/007, recuperación de contraseña, perfil propio y afiliación normalizada. El contrato está en `docs/FCV Dev/llm-wiki/wiki/contracts.md`. Java 21/Spring Boot 3.5.0/Maven y las migraciones Flyway V1-V4 se ejecutan en `develop`.
 
 Para desarrollo local, configura las variables de `.env.example` con valores propios fuera de Git y activa el perfil `local`. Los secretos JWT deben ser distintos y tener al menos 32 bytes. El perfil local usa cookie HTTP `SameSite=Lax`; el predeterminado requiere HTTPS y usa `SameSite=None; Secure`.
+
+El endpoint de recuperación responde de forma genérica. Para pruebas locales, `PASSWORD_RESET_EXPOSE_TOKEN=true` agrega temporalmente el token de desarrollo en la respuesta; mantenlo desactivado fuera de entornos locales.
 
 En Windows con Docker Desktop, ejecuta las pruebas desde este directorio:
 
